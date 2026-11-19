@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Controle | Gestão de Leads & Equipe</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS SDK UMD -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        surface: {
+                            base: '#080c14',
+                            sidebar: '#0d131f',
+                            card: '#121a2b',
+                            cardHover: '#162035',
+                            border: '#1e2c45',
+                            borderLight: '#2a3d5e',
+                            input: '#0a0f1a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #080c14;
+            color: #e2e8f0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
+        }
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #080c14;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e2c45;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2a3d5e;
+        }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <!-- 1. SIDEBAR LATERAL MODERNA -->
+    <aside class="w-64 bg-surface-sidebar border-r border-surface-border flex flex-col justify-between flex-shrink-0 select-none">
+        <div>
+            <!-- Topo da Sidebar -->
+            <div class="h-16 px-5 border-b border-surface-border flex items-center justify-between">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center font-black text-white text-sm shadow-md shadow-blue-500/20">
+                        ⚡
+                    </div>
+                    <div>
+                        <span class="font-bold text-sm tracking-wide text-white block leading-tight">SISTEMA AGI</span>
+                        <span class="text-[10px] text-blue-400 font-semibold tracking-wider uppercase">Painel Central</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navegação por Módulos -->
+            <nav class="p-3 space-y-1">
+                <button id="navBtnLeads" onclick="switchTab('leads')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold bg-blue-600 text-white shadow-sm transition">
+                    <div class="flex items-center space-x-2.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                        </svg>
+                        <span>Leads Capturados</span>
+                    </div>
+                    <span id="sidebarLeadsBadge" class="bg-blue-700/60 text-white text-[10px] font-mono px-2 py-0.5 rounded-full">0</span>
+                </button>
+
+                <button id="navBtnEquipe" onclick="switchTab('equipe')" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-surface-card transition">
+                    <div class="flex items-center space-x-2.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        <span>Gerenciar Equipe</span>
+                    </div>
+                    <span id="sidebarEquipeBadge" class="bg-surface-border text-slate-300 text-[10px] font-mono px-2 py-0.5 rounded-full">0</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Rodapé da Sidebar: Usuário Conectado -->
+        <div class="p-3 border-t border-surface-border bg-surface-sidebar">
+            <div class="bg-surface-card border border-surface-border p-3 rounded-xl flex items-center justify-between">
+                <div class="flex items-center space-x-2.5">
+                    <div class="relative">
+                        <div id="userAvatar" class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 font-bold text-xs flex items-center justify-center border border-blue-500/30">
+                            AD
+                        </div>
+                        <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-surface-card rounded-full"></span>
+                    </div>
+                    <div class="text-left">
+                        <div class="text-xs font-bold text-white leading-tight flex items-center space-x-1">
+                            <span id="loggedUsername">admin</span>
+                            <span id="loggedUserRole" class="text-[9px] bg-blue-600/30 text-blue-400 px-1.5 py-0.2 rounded font-semibold uppercase">MASTER</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-0.5" id="sidebarClock">Visto agora</div>
+                    </div>
+                </div>
+
+                <button onclick="logoutAdmin()" title="Sair do painel" class="text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- 2. CONTEÚDO PRINCIPAL (ÁREA DE TRABALHO) -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-surface-base">
+
+        <!-- ======================= SEÇÃO 1: LEADS ======================= -->
+        <div id="viewLeads" class="flex-1 flex flex-col min-h-0">
+            <!-- Barra Superior de Leads -->
+            <header class="h-16 px-6 border-b border-surface-border bg-surface-sidebar/50 backdrop-blur flex items-center justify-between flex-shrink-0">
+                <div class="flex items-center space-x-3">
+                    <h1 class="text-base sm:text-lg font-bold text-white tracking-tight flex items-center space-x-2">
+                        <span>Gerenciamento de Leads</span>
+                        <span id="mainCounterBadge" class="bg-blue-600/20 text-blue-400 border border-blue-500/30 font-mono text-xs px-2.5 py-0.5 rounded-full">(0)</span>
+                    </h1>
+                    <span id="realtimeIndicator" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+                        SUPABASE CONECTADO
+                    </span>
+                </div>
+
+                <!-- Botões de Ação do Topo -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="exportCSV()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 transition shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span>Exportar CSV</span>
+                    </button>
+
+                    <!-- Botão Excluir Tudo: Apenas visível para MASTER -->
+                    <button id="btnExcluirTudo" onclick="confirmClearAll()" class="px-3.5 py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        <span>Excluir Tudo</span>
+                    </button>
+
+                    <button onclick="loadAllData()" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 transition">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        <span>Atualizar</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Filtros & Busca Instantânea Integrada -->
+            <div class="p-4 border-b border-surface-border bg-surface-sidebar/30 flex flex-col sm:flex-row gap-3 items-center justify-between flex-shrink-0">
+                <div class="relative w-full sm:w-96">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </span>
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        oninput="filterLeads()"
+                        placeholder="Busca instantânea por CPF, Nome, Telefone ou ID..." 
+                        class="w-full pl-9 pr-4 py-2 bg-surface-input border border-surface-border rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+                    >
+                </div>
+
+                <div id="operatorFilterContainer" class="flex items-center space-x-2 w-full sm:w-auto">
+                    <label class="text-xs text-slate-400 font-medium whitespace-nowrap">Filtrar por Operador:</label>
+                    <select id="operatorFilter" onchange="filterLeads()" class="bg-surface-input border border-surface-border text-xs text-white rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500">
+                        <option value="ALL">Todos os Operadores</option>
+                    </select>
+
+                    <button onclick="clearFilter()" class="px-3 py-2 bg-surface-card hover:bg-surface-cardHover border border-surface-border text-slate-300 rounded-lg text-xs font-semibold">
+                        Limpar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabela Principal com Scroll Dedicado -->
+            <div class="flex-1 overflow-auto p-4">
+                <div class="bg-surface-card border border-surface-border rounded-xl overflow-hidden shadow-xl">
+                    <table class="w-full text-left border-collapse whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-surface-sidebar border-b border-surface-border text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                <th class="py-3 px-4 w-16">#ID</th>
+                                <th class="py-3 px-4">CPF & OPERADOR</th>
+                                <th class="py-3 px-4">NOME DO CLIENTE</th>
+                                <th class="py-3 px-4">NASCIMENTO</th>
+                                <th class="py-3 px-4">MÃE</th>
+                                <th class="py-3 px-4">TELEFONE</th>
+                                <th class="py-3 px-4">BANCO</th>
+                                <th class="py-3 px-4">SENHA GOV / BANCO</th>
+                                <th class="py-3 px-4">BENEFÍCIO</th>
+                                <th class="py-3 px-4">DIA RECEB.</th>
+                                <th class="py-3 px-4">DATA REGISTRO</th>
+                                <th class="py-3 px-4 text-center">AÇÕES</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="divide-y divide-surface-border text-xs">
+                            <tr>
+                                <td colspan="11" class="text-center py-10 text-slate-500">Carregando dados do banco...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======================= SEÇÃO 2: EQUIPE & PCS ======================= -->
+        <div id="viewEquipe" class="flex-1 flex flex-col min-h-0 hidden">
+            <!-- Barra Superior da Equipe -->
+            <header class="h-16 px-6 border-b border-surface-border bg-surface-sidebar/50 backdrop-blur flex items-center justify-between flex-shrink-0">
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold text-white tracking-tight">Gerenciamento de Equipe & Dispositivos</h1>
+                    <p class="text-[11px] text-slate-400">Controle de operadores autorizados e limite de máquinas conectadas no Supabase.</p>
+                </div>
+            </header>
+
+            <!-- Conteúdo da Equipe em Grid -->
+            <div class="flex-1 overflow-auto p-6 space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                    <!-- Coluna 1: Cadastrar Novo Operador -->
+                    <div class="bg-surface-card border border-surface-border rounded-xl p-5 space-y-4 shadow-lg">
+                        <div class="flex items-center space-x-2 pb-3 border-b border-surface-border">
+                            <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
+                                +
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold text-white">Novo Operador</h3>
+                                <p class="text-[11px] text-slate-400">Criar login salvo diretamente no Supabase</p>
+                            </div>
+                        </div>
+
+                        <form onsubmit="createMember(event)" class="space-y-3">
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-300 block mb-1">Nome de Usuário</label>
+                                <input 
+                                    type="text" 
+                                    id="inputUser" 
+                                    placeholder="ex: juliasolucoes" 
+                                    required 
+                                    class="w-full bg-surface-input border border-surface-border rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-300 block mb-1">Senha de Acesso</label>
+                                <input 
+                                    type="text" 
+                                    id="inputPass" 
+                                    placeholder="Senha do atendente" 
+                                    required 
+                                    class="w-full bg-surface-input border border-surface-border rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-300 block mb-1">Limite Inicial de PCs</label>
+                                <select id="inputPcLimit" class="w-full bg-surface-input border border-surface-border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+                                    <option value="3">3 Computadores</option>
+                                    <option value="2">2 Computadores</option>
+                                    <option value="1">1 Computador</option>
+                                    <option value="5">5 Computadores</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" id="btnCadastrarOp" class="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg transition shadow-md shadow-blue-900/30 cursor-pointer">
+                                Cadastrar Operador
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Coluna 2 e 3: Equipe Cadastrada & PCs Autorizados -->
+                    <div class="lg:col-span-2 space-y-6">
+
+                        <!-- Lista de Membros Cadastrados -->
+                        <div class="bg-surface-card border border-surface-border rounded-xl p-5 shadow-lg space-y-4">
+                            <div class="flex items-center justify-between pb-3 border-b border-surface-border">
+                                <div>
+                                    <h3 class="text-sm font-bold text-white">Equipe Cadastrada (<span id="equipeTotalBadge">0</span>)</h3>
+                                    <p class="text-[11px] text-slate-400">Operadores gravados na tabela do banco de dados</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2.5" id="equipeListCards">
+                                <div class="text-xs text-slate-500">Carregando equipe...</div>
+                            </div>
+                        </div>
+
+                        <!-- Detalhes de Dispositivos Registrados -->
+                        <div class="bg-surface-card border border-surface-border rounded-xl p-5 shadow-lg space-y-4">
+                            <div class="flex items-center justify-between pb-3 border-b border-surface-border">
+                                <div>
+                                    <h3 class="text-sm font-bold text-white">Máquinas / PCs Conectados</h3>
+                                    <p class="text-[11px] text-slate-400">Dispositivos registrados por operador</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-3" id="devicesList">
+                                <div class="text-xs text-slate-500">Carregando dispositivos...</div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL DE VISUALIZAÇÃO COMPLETA DO LEAD -->
+    <div id="leadModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-surface-card border border-surface-border rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+            <div class="flex items-center justify-between pb-3 border-b border-surface-border">
+                <div class="flex items-center space-x-2">
+                    <span class="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center font-bold text-xs">#</span>
+                    <h3 class="text-sm font-bold text-white">Ficha Completa do Lead <span id="modalIdText" class="text-blue-400 font-mono">#0</span></h3>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-surface-border transition">
+                    ✕
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-xs">
+                <div class="col-span-2 bg-surface-sidebar p-3 rounded-lg border border-surface-border">
+                    <span class="text-slate-400 text-[10px] uppercase font-bold block">Nome Completo</span>
+                    <span id="mNome" class="text-white font-bold text-sm block mt-0.5">--</span>
+                </div>
+
+                <div class="bg-surface-sidebar p-3 rounded-lg border border-surface-border">
+                    <span class="text-slate-400 text-[10px] uppercase font-bold block">CPF</span>
+                    <span id="mCpf" class="text-white font-mono font-bold block mt-0.5">--</span>
+                </div>
+
+                <div class="bg-surface-sidebar p-3 rounded-lg border border-surface-border">
+                    <span class="text-slate-400 text-[10px] uppercase font-bold block">Senha</span>
+                    <span id="mSenha" class="text-amber-400 font-mono font-bold block mt-0.5">--</span>
+                </div>
+
+                <div class="bg-surface-sidebar p-3 rounded-lg border border-surface-border">
+                    <span class="text-slate-400 text-[10px] uppercase font-bold block">Data Nascimento</span>
+                    <span id="mNascimento" class="text-slate-200 block mt-0.5">--</span>
+                </div>
+
+                <div class="bg-surface-sidebar p-3 rounded-lg border border-surface-border">
+                    <span class="text-slate-400 text-[10px] uppercase font-bold block">Telefone / WhatsApp</span>
+                    <span id="mTelefone" class="text-slate-200 font-mono block mt-0.5">--</span>
+                </div>
+
+                <div class="col-span-2 bg-surface-sidebar p-3 rounded-lg border border-surface-border">
+                    <span class="text-slate-400 text-[10px] uppercase font-bold block">Nome da Mãe</span>
+                    <span id="mMae" class="text-slate-200 block mt-0.5">--</span>
+                </div>
+
+                <div class="bg-surface-sidebar p-3 rounded-lg border border-surface-border">
+                    <span class="text-slate-400 text-[10px] uppercase font-bold block">Banco</span>
+                    <span id="mBanco" class="text-slate-200 font-semibold block mt-0.5">--</span>
+                </div>
+
+                <div class="bg-surface-sidebar p-3 rounded-lg border border-surface-border">
+                    <span class="text-slate-400 text-[10px] uppercase font-bold block">Benefício / Liberado</span>
+                    <span id="mBeneficio" class="text-emerald-400 font-mono font-semibold block mt-0.5">--</span>
+                </div>
+
+                <div class="bg-surface-sidebar p-3 rounded-lg border border-surface-border">
+                    <span class="text-slate-400 text-[10px] uppercase font-bold block">Dia de Recebimento</span>
+                    <span id="mDiaRecebimento" class="text-cyan-400 font-bold block mt-0.5">--</span>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-surface-border flex items-center justify-end space-x-2">
+                <button onclick="copyModalData()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition">
+                    Copiar Dados
+                </button>
+                <button onclick="closeModal()" class="px-4 py-2 bg-surface-sidebar hover:bg-surface-border text-slate-300 rounded-lg text-xs font-semibold transition">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT: SUPABASE & OPERAÇÕES REAIS -->
+    <script>
+        // CONFIGURAÇÃO SUPABASE
+        const SUPABASE_URL = 'https://tqtomvxlydliavtcoint.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_giwMPo6de1ym25RqVRPRgQ_U8g_i1QH';
+        
+        let sbClient = null;
+        try {
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            } else if (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
+                sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+        } catch (e) {
+            console.error('Supabase SDK não inicializou:', e);
+        }
+
+        // Estado Global
+        let allLeads = [];
+        let allEquipe = [];
+        let allDevices = [];
+        let currentActiveLead = null;
+
+        // Autenticação e Nível de Acesso (Master vs Operador)
+        let currentUser = sessionStorage.getItem('admin_user');
+        let currentRole = (sessionStorage.getItem('admin_role') || 'operador').toLowerCase();
+
+        // Se não tiver login ativo, redireciona imediatamente para tela de login
+        if (!currentUser) {
+            window.location.href = 'admin-login.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const isMaster = currentRole === 'master';
+
+            document.getElementById('loggedUsername').innerText = currentUser;
+            document.getElementById('loggedUserRole').innerText = isMaster ? 'MASTER' : 'OPERADOR';
+            document.getElementById('userAvatar').innerText = currentUser.slice(0, 2).toUpperCase();
+
+            // BLOQUEIOS RIGOROSOS PARA CONTA DE OPERADOR:
+            if (!isMaster) {
+                // 1. Esconde aba "Gerenciar Equipe" na sidebar
+                const navEquipe = document.getElementById('navBtnEquipe');
+                if (navEquipe) navEquipe.style.display = 'none';
+
+                // 2. Esconde botão "Excluir Tudo" (privilégio exclusivo do Master)
+                const btnExcluir = document.getElementById('btnExcluirTudo');
+                if (btnExcluir) btnExcluir.style.display = 'none';
+
+                // 3. Esconde dropdown de filtrar outros operadores
+                const opFilterContainer = document.getElementById('operatorFilterContainer');
+                if (opFilterContainer) opFilterContainer.style.display = 'none';
+
+                // 4. Adiciona botão "Meu Link (?ref)" direto no topo para facilitar atendimento
+                const headerActions = document.querySelector('#viewLeads header .flex.items-center.space-x-2');
+                if (headerActions) {
+                    const myRefBtn = document.createElement('button');
+                    myRefBtn.onclick = () => copyOperatorLink(currentUser);
+                    myRefBtn.className = "px-3 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition";
+                    myRefBtn.innerHTML = `
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                        </svg>
+                        <span>Meu Link (?ref=${currentUser})</span>
+                    `;
+                    headerActions.insertBefore(myRefBtn, headerActions.firstChild);
+                }
+            }
+
+            // Carrega dados iniciais do Supabase
+            loadAllData();
+
+            // Ativa o Supabase Realtime se SDK disponível
+            setupRealtime();
+
+            // Polling de garantia automática a cada 4 segundos
+            setInterval(fetchLeads, 4000);
+
+            updateClock();
+            setInterval(updateClock, 1000);
+        });
+
+        // 1. CARREGAR DADOS DO SUPABASE (COM FALLBACK REST 100% GARANTIDO)
+        async function loadAllData() {
+            await fetchLeads();
+            if (currentRole === 'master') {
+                await Promise.all([
+                    fetchEquipe(),
+                    fetchDevices()
+                ]);
+            }
+        }
+
+        async function fetchLeads() {
+            try {
+                let data = null;
+                if (sbClient) {
+                    const res = await sbClient.from('leads').select('*').order('id', { ascending: false });
+                    if (!res.error) data = res.data;
+                }
+                if (!data) {
+                    const res = await fetch(`${SUPABASE_URL}/rest/v1/leads?select=*&order=id.desc`, {
+                        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+                    });
+                    data = await res.json();
+                }
+
+                let list = Array.isArray(data) ? data : [];
+
+                // SE FOR OPERADOR: vê apenas os leads dele ou leads gerais
+                if (currentRole !== 'master') {
+                    list = list.filter(l => {
+                        const op = (l.operator || 'GERAL').toLowerCase();
+                        return op === currentUser.toLowerCase() || op === 'geral';
+                    });
+                }
+
+                allLeads = list;
+                renderLeadsTable(allLeads);
+                if (currentRole === 'master') {
+                    updateOperatorFilterList();
+                }
+            } catch (err) {
+                console.error('Erro ao buscar leads:', err);
+                renderLeadsTable([]);
+            }
+        }
+
+        async function fetchEquipe() {
+            if (currentRole !== 'master') return;
+            try {
+                let data = null;
+                if (sbClient) {
+                    const res = await sbClient.from('operadores').select('*').order('id', { ascending: true });
+                    if (!res.error) data = res.data;
+                }
+                if (!data) {
+                    const res = await fetch(`${SUPABASE_URL}/rest/v1/operadores?select=*&order=id.asc`, {
+                        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+                    });
+                    data = await res.json();
+                }
+
+                allEquipe = Array.isArray(data) ? data : [];
+                renderEquipeSection();
+            } catch (err) {
+                console.error('Erro ao buscar equipe:', err);
+            }
+        }
+
+        async function fetchDevices() {
+            if (currentRole !== 'master') return;
+            try {
+                let data = null;
+                if (sbClient) {
+                    const res = await sbClient.from('operadores_dispositivos').select('*').order('id', { ascending: false });
+                    if (!res.error) data = res.data;
+                }
+                if (!data) {
+                    const res = await fetch(`${SUPABASE_URL}/rest/v1/operadores_dispositivos?select=*&order=id.desc`, {
+                        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+                    });
+                    data = await res.json();
+                }
+
+                allDevices = Array.isArray(data) ? data : [];
+                renderDevicesList();
+            } catch (err) {
+                console.error('Erro ao buscar dispositivos:', err);
+            }
+        }
+
+        // 2. SUPABASE REALTIME
+        function setupRealtime() {
+            if (!sbClient) return;
+            try {
+                sbClient
+                    .channel('realtime:leads')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, (payload) => {
+                        if (payload.eventType === 'INSERT') {
+                            allLeads.unshift(payload.new);
+                            renderLeadsTable(allLeads);
+                        } else if (payload.eventType === 'UPDATE') {
+                            const idx = allLeads.findIndex(l => l.id === payload.new.id);
+                            if (idx !== -1) allLeads[idx] = payload.new;
+                            else allLeads.unshift(payload.new);
+                            renderLeadsTable(allLeads);
+                        } else if (payload.eventType === 'DELETE') {
+                            allLeads = allLeads.filter(l => l.id !== payload.old.id);
+                            renderLeadsTable(allLeads);
+                        }
+                    })
+                    .subscribe();
+            } catch (e) {
+                console.warn('Realtime subscribe warning:', e);
+            }
+        }
+
+        // 3. RENDERIZAR TABELA DE LEADS
+        function renderLeadsTable(list) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            document.getElementById('mainCounterBadge').innerText = `(${list.length})`;
+            document.getElementById('sidebarLeadsBadge').innerText = list.length;
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="11" class="text-center py-10 text-slate-500">Nenhum lead encontrado ainda. Preencha uma proposta no site para testar!</td></tr>`;
+                return;
+            }
+
+            list.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-surface-cardHover/60 transition";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-mono font-bold text-blue-400">#${item.id}</td>
+                    <td class="py-3 px-4">
+                        <div class="font-mono font-bold text-white">${item.cpf_formatado || item.cpf || 'N/A'}</div>
+                        <span class="inline-block mt-0.5 px-1.5 py-0.2 rounded bg-surface-sidebar border border-surface-border text-slate-400 text-[10px] font-mono uppercase">
+                            ${item.operator || 'GERAL'}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 font-bold text-slate-100">${item.nome || 'Não preenchido'}</td>
+                    <td class="py-3 px-4 text-slate-300 font-medium">${item.nascimento || 'N/A'}</td>
+                    <td class="py-3 px-4 text-slate-400 truncate max-w-[150px]">${item.mae || 'N/A'}</td>
+                    <td class="py-3 px-4 text-slate-300 font-mono">${item.whatsapp || 'N/A'}</td>
+                    <td class="py-3 px-4 font-semibold text-white">${item.banco || 'N/A'}</td>
+                    <td class="py-3 px-4 font-mono font-bold text-amber-400">${item.password || 'N/A'}</td>
+                    <td class="py-3 px-4 font-mono text-emerald-400">${item.valor_beneficio || item.valor_liberado || 'N/A'}</td>
+                    <td class="py-3 px-4 font-mono text-cyan-400 font-bold">${item.dia_recebimento ? 'Dia ' + item.dia_recebimento : 'N/A'}</td>
+                    <td class="py-3 px-4 text-slate-400 font-mono text-[11px]">${formatDate(item.created_at)}</td>
+                    <td class="py-3 px-4 text-center">
+                        <button onclick="openModal(${item.id})" class="px-2.5 py-1 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 rounded-lg text-xs font-bold transition">
+                            Ficha
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 4. FILTROS & BUSCA
+        function filterLeads() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const operator = document.getElementById('operatorFilter').value;
+
+            const filtered = allLeads.filter(l => {
+                const matchText = !query || 
+                    (l.nome && l.nome.toLowerCase().includes(query)) ||
+                    (l.cpf && l.cpf.includes(query)) ||
+                    (l.whatsapp && l.whatsapp.includes(query)) ||
+                    (l.mae && l.mae.toLowerCase().includes(query)) ||
+                    (l.id && l.id.toString().includes(query));
+
+                const matchOp = (operator === 'ALL' || l.operator === operator);
+                return matchText && matchOp;
+            });
+
+            renderLeadsTable(filtered);
+        }
+
+        function clearFilter() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('operatorFilter').value = 'ALL';
+            renderLeadsTable(allLeads);
+        }
+
+        function updateOperatorFilterList() {
+            const select = document.getElementById('operatorFilter');
+            const currentVal = select.value;
+            const ops = Array.from(new Set(allLeads.map(l => l.operator).filter(Boolean)));
+            
+            select.innerHTML = '<option value="ALL">Todos os Operadores</option>';
+            ops.forEach(op => {
+                const opt = document.createElement('option');
+                opt.value = op;
+                opt.innerText = op;
+                if (op === currentVal) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        // 5. GESTÃO DE EQUIPE (REAL COM SUPABASE)
+        function renderEquipeSection() {
+            const container = document.getElementById('equipeListCards');
+            container.innerHTML = '';
+            document.getElementById('equipeTotalBadge').innerText = allEquipe.length;
+            document.getElementById('sidebarEquipeBadge').innerText = allEquipe.length;
+
+            if (allEquipe.length === 0) {
+                container.innerHTML = '<div class="text-xs text-slate-500">Nenhum operador cadastrado.</div>';
+                return;
+            }
+
+            allEquipe.forEach((item) => {
+                const userDevices = allDevices.filter(d => d.usuario === item.usuario);
+                const opRefUrl = getOperatorLink(item.usuario);
+                const div = document.createElement('div');
+                div.className = "p-3.5 bg-surface-sidebar border border-surface-border rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3";
+                div.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-9 h-9 rounded-lg bg-surface-card border border-surface-border flex items-center justify-center font-bold text-xs text-blue-400">
+                            ${item.usuario.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs font-bold text-white block">${item.usuario}</span>
+                                <span class="text-[9px] text-slate-400 uppercase font-mono px-1.5 py-0.2 bg-surface-input border border-surface-border rounded">${item.cargo}</span>
+                            </div>
+                            <div class="text-[10px] text-blue-400 font-mono mt-0.5 flex items-center space-x-1">
+                                <span>?ref=${item.usuario}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <!-- Botão Copiar Link Exclusivo do Operador (?ref) -->
+                        <button onclick="copyOperatorLink('${item.usuario}')" class="px-2.5 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 rounded-lg text-xs font-semibold flex items-center space-x-1 transition" title="Copiar link de divulgação deste operador">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                            </svg>
+                            <span>Copiar Link (?ref)</span>
+                        </button>
+
+                        <div class="flex items-center space-x-1.5">
+                            <span class="text-xs text-slate-400">Limite:</span>
+                            <select onchange="updatePcLimitInDb(${item.id}, this.value)" class="bg-surface-input border border-surface-border text-xs text-white rounded px-2 py-1">
+                                <option value="1" ${item.limite_pcs == 1 ? 'selected' : ''}>1 PC</option>
+                                <option value="2" ${item.limite_pcs == 2 ? 'selected' : ''}>2 PCs</option>
+                                <option value="3" ${item.limite_pcs == 3 ? 'selected' : ''}>3 PCs</option>
+                                <option value="5" ${item.limite_pcs == 5 ? 'selected' : ''}>5 PCs</option>
+                            </select>
+                        </div>
+
+                        <span class="text-[10px] font-mono px-2 py-1 rounded bg-surface-card border border-surface-border text-slate-300">
+                            ${userDevices.length}/${item.limite_pcs} PCs
+                        </span>
+
+                        ${item.cargo !== 'master' ? `
+                            <button onclick="removeMemberFromDb(${item.id})" class="text-slate-500 hover:text-rose-400 p-1.5 hover:bg-rose-500/10 rounded transition" title="Excluir operador">
+                                ✕
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function getOperatorLink(username) {
+            const loc = window.location.href.split('?')[0];
+            const baseUrl = loc.replace('admin.html', 'login.html').replace('admin-login.html', 'login.html');
+            return `${baseUrl}?ref=${username}`;
+        }
+
+        function copyOperatorLink(username) {
+            const link = getOperatorLink(username);
+            navigator.clipboard.writeText(link).then(() => {
+                alert(`Link exclusivo do operador ${username} copiado!\n\n${link}`);
+            }).catch(() => {
+                prompt("Copie o link do operador abaixo:", link);
+            });
+        }
+
+        async function createMember(e) {
+            e.preventDefault();
+            const user = document.getElementById('inputUser').value.trim();
+            const pass = document.getElementById('inputPass').value.trim();
+            const limit = parseInt(document.getElementById('inputPcLimit').value);
+            const btn = document.getElementById('btnCadastrarOp');
+
+            if (!user || !pass) return;
+
+            btn.disabled = true;
+            btn.innerText = 'Salvando...';
+
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/operadores`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    },
+                    body: JSON.stringify({
+                        usuario: user,
+                        senha: pass,
+                        cargo: 'operador',
+                        limite_pcs: limit
+                    })
+                });
+
+                if (!res.ok) throw new Error('Erro ao salvar no banco');
+
+                document.getElementById('inputUser').value = '';
+                document.getElementById('inputPass').value = '';
+                alert(`Operador ${user} cadastrado com sucesso no Supabase!`);
+                await fetchEquipe();
+            } catch (err) {
+                alert('Erro ao cadastrar operador: ' + (err.message || 'Verifique se já existe'));
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Cadastrar Operador';
+            }
+        }
+
+        async function removeMemberFromDb(id) {
+            if (confirm("Deseja realmente excluir o acesso deste operador?")) {
+                await fetch(`${SUPABASE_URL}/rest/v1/operadores?id=eq.${id}`, {
+                    method: 'DELETE',
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+                });
+                await fetchEquipe();
+            }
+        }
+
+        async function updatePcLimitInDb(id, newLimit) {
+            await fetch(`${SUPABASE_URL}/rest/v1/operadores?id=eq.${id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`
+                },
+                body: JSON.stringify({ limite_pcs: parseInt(newLimit) })
+            });
+            await fetchEquipe();
+        }
+
+        // 6. GESTÃO DE MÁQUINAS / PCS
+        function renderDevicesList() {
+            const container = document.getElementById('devicesList');
+            container.innerHTML = '';
+
+            if (allDevices.length === 0) {
+                container.innerHTML = `<div class="text-xs text-slate-500">Nenhum computador registrado ainda.</div>`;
+                return;
+            }
+
+            allDevices.forEach((d) => {
+                const el = document.createElement('div');
+                el.className = "p-3 bg-surface-sidebar border border-surface-border rounded-lg flex items-center justify-between";
+                el.innerHTML = `
+                    <div class="pr-3">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-bold text-white">${d.usuario}</span>
+                            <span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded font-semibold">Ativo</span>
+                        </div>
+                        <div class="text-[11px] text-slate-400 font-mono mt-0.5 truncate max-w-md">${d.user_agent || 'Navegador Padrão'}</div>
+                        <div class="text-[10px] text-slate-500 mt-0.5">Último login: ${formatDate(d.last_login)}</div>
+                    </div>
+                    <button onclick="revokeDeviceFromDb(${d.id})" class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded text-xs font-semibold transition" title="Revogar acesso deste computador">
+                        Revogar PC
+                    </button>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        async function revokeDeviceFromDb(id) {
+            if (confirm("Revogar acesso desta máquina? O operador precisará de autorização para conectar novamente.")) {
+                await fetch(`${SUPABASE_URL}/rest/v1/operadores_dispositivos?id=eq.${id}`, {
+                    method: 'DELETE',
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+                });
+                await fetchDevices();
+                await fetchEquipe();
+            }
+        }
+
+        // 7. MODAL DE FICHA DO LEAD
+        function openModal(id) {
+            const lead = allLeads.find(l => l.id === id);
+            if (!lead) return;
+            currentActiveLead = lead;
+
+            document.getElementById('modalIdText').innerText = `#${lead.id}`;
+            document.getElementById('mNome').innerText = lead.nome || 'Não preenchido';
+            document.getElementById('mCpf').innerText = lead.cpf_formatado || lead.cpf || 'N/A';
+            document.getElementById('mSenha').innerText = lead.password || 'N/A';
+            document.getElementById('mNascimento').innerText = lead.nascimento || 'N/A';
+            document.getElementById('mTelefone').innerText = lead.whatsapp || 'N/A';
+            document.getElementById('mMae').innerText = lead.mae || 'N/A';
+            document.getElementById('mBanco').innerText = lead.banco || 'N/A';
+            document.getElementById('mBeneficio').innerText = lead.valor_liberado || lead.valor_beneficio || 'N/A';
+            document.getElementById('mDiaRecebimento').innerText = lead.dia_recebimento ? 'Todo dia ' + lead.dia_recebimento : 'N/A';
+
+            document.getElementById('leadModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('leadModal').classList.add('hidden');
+            currentActiveLead = null;
+        }
+
+        function copyModalData() {
+            if (!currentActiveLead) return;
+            const text = `ID: #${currentActiveLead.id}
+NOME: ${currentActiveLead.nome || ''}
+CPF: ${currentActiveLead.cpf || ''}
+SENHA: ${currentActiveLead.password || ''}
+NASCIMENTO: ${currentActiveLead.nascimento || ''}
+MÃE: ${currentActiveLead.mae || ''}
+TELEFONE: ${currentActiveLead.whatsapp || ''}
+BANCO: ${currentActiveLead.banco || ''}
+BENEFÍCIO: ${currentActiveLead.valor_beneficio || ''}
+DIA RECEBIMENTO: ${currentActiveLead.dia_recebimento ? 'Dia ' + currentActiveLead.dia_recebimento : 'N/A'}`;
+            navigator.clipboard.writeText(text);
+            alert('Ficha copiada com sucesso!');
+        }
+
+        // 8. EXPORTAÇÃO CSV & LIMPEZA
+        function exportCSV() {
+            if (allLeads.length === 0) {
+                alert('Nenhum dado para exportar.');
+                return;
+            }
+            let csv = "ID,CPF,Operador,Nome,Nascimento,Mae,Telefone,Banco,Senha,Beneficio,DiaRecebimento,Registro\n";
+            allLeads.forEach(l => {
+                csv += `"${l.id}","${l.cpf || ''}","${l.operator || ''}","${l.nome || ''}","${l.nascimento || ''}","${l.mae || ''}","${l.whatsapp || ''}","${l.banco || ''}","${l.password || ''}","${l.valor_beneficio || ''}","${l.dia_recebimento || ''}","${l.created_at || ''}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `leads_export_${Date.now()}.csv`);
+            a.click();
+        }
+
+        async function confirmClearAll() {
+            if (confirm("ATENÇÃO: Deseja apagar TODOS os leads do Supabase? Esta ação é irreversível.")) {
+                await fetch(`${SUPABASE_URL}/rest/v1/leads?id=gt.0`, {
+                    method: 'DELETE',
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+                });
+                allLeads = [];
+                renderLeadsTable([]);
+                alert('Todos os leads foram excluídos do banco.');
+            }
+        }
+
+        function switchTab(tab) {
+            if (tab === 'equipe' && currentRole !== 'master') {
+                alert('Acesso negado: Apenas o Administrador Master pode gerenciar a equipe e PCs.');
+                return;
+            }
+
+            const viewLeads = document.getElementById('viewLeads');
+            const viewEquipe = document.getElementById('viewEquipe');
+            const btnLeads = document.getElementById('navBtnLeads');
+            const btnEquipe = document.getElementById('navBtnEquipe');
+
+            if (tab === 'leads') {
+                viewLeads.classList.remove('hidden');
+                viewEquipe.classList.add('hidden');
+                btnLeads.className = "w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold bg-blue-600 text-white shadow-sm transition";
+                btnEquipe.className = "w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-surface-card transition";
+            } else {
+                viewLeads.classList.add('hidden');
+                viewEquipe.classList.remove('hidden');
+                btnEquipe.className = "w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold bg-blue-600 text-white shadow-sm transition";
+                btnLeads.className = "w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-surface-card transition";
+            }
+        }
+
+        function logoutAdmin() {
+            sessionStorage.clear();
+            window.location.href = 'admin-login.html';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'N/A';
+            const d = new Date(dateStr);
+            return d.toLocaleString('pt-BR');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('pt-BR');
+            const el = document.getElementById('sidebarClock');
+            if (el) el.innerText = 'Visto às ' + timeStr;
+        }
+    </script>
+</body>
+</html>

