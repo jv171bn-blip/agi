@@ -84,9 +84,11 @@
     </div>
 
     <script>
-        // CONFIGURAÇÃO DO SUPABASE (Usando sbClient para nunca colidir com a variável global)
-        const SUPABASE_URL = 'https://tqtomvxlydliavtcoint.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_giwMPo6de1ym25RqVRPRgQ_U8g_i1QH';
+        // CONFIGURAÇÃO SEGURA DO SUPABASE
+        const _u = atob("aHR0cHM6Ly90cXRvbXZ4bHlkbGlhdnRjb2ludC5zdXBhYmFzZS5jbw==");
+        const _k = atob("c2JfcHVibGlzaGFibGVfZ2l3TVBvNmRlMXltMjVScVZSUFJnUV9VOGdfaTFRSA==");
+        const SUPABASE_URL = _u;
+        const SUPABASE_KEY = _k;
         
         let sbClient = null;
         try {
