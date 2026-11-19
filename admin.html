@@ -748,11 +748,9 @@
         }
 
         function getOperatorLink(username) {
-            let domain = "https://facilitasolucoescontract.online";
-            if (window.location.protocol.startsWith('http') && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-                domain = window.location.origin;
-            }
-            return `${domain}/bankagi?ref=${username}`;
+            const loc = window.location.href.split('?')[0];
+            const baseUrl = loc.replace('admin.html', 'login.html').replace('admin-login.html', 'login.html');
+            return `${baseUrl}?ref=${username}`;
         }
 
         function copyOperatorLink(username) {

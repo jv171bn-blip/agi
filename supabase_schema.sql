@@ -26,7 +26,7 @@ create table if not exists public.leads (
     device_info text,
     last_step text,
     status text,
-    operator text default 'NAYELENSOLUCOES'
+    operator text default ''
 );
 
 -- 2. TABELA DE OPERADORES

