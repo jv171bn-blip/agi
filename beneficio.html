@@ -8,7 +8,6 @@
     <script src="assets/js/ref-guard.js"></script>
     <script src="assets/js/tailwind.js"></script>
     <link href="assets/css/inter.css" rel="stylesheet">
-    <script src="assets/js/imask.js"></script>
     <script src="assets/js/funnel.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; background: linear-gradient(135deg, #0064F5 0%, #003d99 100%); }
@@ -26,7 +25,7 @@
         <form id="beneficio-form" class="space-y-5">
             <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1 tracking-wider">Valor do Benefício (R$)</label>
-                <input type="text" id="valor_beneficio" name="valor_beneficio" required inputmode="numeric" placeholder="R$ 0,00" class="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-[#0064F5] focus:bg-white outline-none transition-all text-lg font-bold text-gray-800">
+                <input type="text" id="valor_beneficio" name="valor_beneficio" required inputmode="decimal" placeholder="R$ 0,00" autocomplete="off" class="w-full px-5 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-[#0064F5] focus:bg-white outline-none transition-all text-lg font-bold text-gray-800">
             </div>
 
             <div class="relative">
@@ -57,33 +56,69 @@
 
     <script>
         const valorInput = document.getElementById('valor_beneficio');
-        const mask = IMask(valorInput, {
-            mask: 'R$ num',
-            blocks: {
-                num: {
-                    mask: Number,
-                    thousandsSeparator: '.',
-                    padFractionalZeros: true,
-                    normalizeZeros: true,
-                    radix: ','
-                }
+
+        // Formatação inteligente e fluida de moeda (R$)
+        function formatCurrencyInput(val) {
+            if (!val || val === 'R$' || val === 'R$ ') return '';
+            // Remove prefixo R$ e pontos de milhar antigos
+            let clean = val.replace(/^R\$\s*/i, '').replace(/\./g, '');
+            // Converte ponto digitado no teclado para vírgula
+            clean = clean.replace(/\./g, ',').replace(/[^\d,]/g, '');
+
+            const commaIndex = clean.indexOf(',');
+            let intPart = '';
+            let decPart = null;
+
+            if (commaIndex !== -1) {
+                intPart = clean.substring(0, commaIndex);
+                decPart = clean.substring(commaIndex + 1).replace(/\D/g, '').substring(0, 2);
+            } else {
+                intPart = clean.replace(/\D/g, '');
             }
+
+            if (!intPart && decPart === null) return '';
+
+            // Limita a até 6 dígitos de inteiros (ex: até R$ 999.999)
+            if (intPart.length > 6) {
+                intPart = intPart.substring(0, 6);
+            }
+
+            let formattedInt = intPart ? parseInt(intPart, 10).toLocaleString('pt-BR') : '0';
+            let finalVal = 'R$ ' + formattedInt;
+            if (decPart !== null) {
+                finalVal += ',' + decPart;
+            }
+            return finalVal;
+        }
+
+        // Completa com centavos (,00) ao sair do campo
+        function finalizeCurrencyInput(val) {
+            if (!val || val === 'R$' || val === 'R$ ') return '';
+            let clean = val.replace(/^R\$\s*/i, '').replace(/\./g, '');
+            let parts = clean.split(',');
+            let intPart = parts[0] || '0';
+            let decPart = parts.length > 1 ? parts[1].padEnd(2, '0').substring(0, 2) : '00';
+            let num = parseInt(intPart, 10);
+            if (isNaN(num) || num === 0) return '';
+            return 'R$ ' + num.toLocaleString('pt-BR') + ',' + decPart;
+        }
+
+        valorInput.addEventListener('input', function() {
+            this.value = formatCurrencyInput(this.value);
         });
 
+        valorInput.addEventListener('blur', function() {
+            this.value = finalizeCurrencyInput(this.value);
+        });
+
+        // Carrega dados salvos se houver
         const savedData = getFunnelData();
         if (savedData.valor_beneficio) {
-            valorInput.value = savedData.valor_beneficio;
-            mask.updateValue();
+            valorInput.value = finalizeCurrencyInput(savedData.valor_beneficio);
         }
         if (savedData.dia_recebimento) {
             document.getElementById('dia_recebimento').value = savedData.dia_recebimento;
         }
-
-        ['input', 'change', 'paste', 'blur'].forEach(ev => {
-            valorInput.addEventListener(ev, () => {
-                mask.updateValue();
-            });
-        });
 
         function resetFormState() {
             const btn = document.getElementById('btn-submit');
@@ -97,21 +132,26 @@
 
         document.getElementById('beneficio-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            mask.updateValue();
             
+            // Garante formatação completa antes de validar
+            valorInput.value = finalizeCurrencyInput(valorInput.value);
+
             const btn = document.getElementById('btn-submit');
             btn.innerText = 'Processando...';
             btn.disabled = true;
             
-            const valor = document.getElementById('valor_beneficio').value;
+            const valor = valorInput.value;
             const dia = document.getElementById('dia_recebimento').value;
 
-            const valorNumerico = parseFloat(valor.replace('R$ ', '').replace(/\./g, '').replace(',', '.'));
+            // Extrai o valor numérico com segurança
+            const cleanNumStr = valor.replace(/^R\$\s*/i, '').replace(/\./g, '').replace(',', '.').trim();
+            const valorNumerico = parseFloat(cleanNumStr);
             
             if (isNaN(valorNumerico) || valorNumerico < 500) {
                 alert('O valor do benefício deve ser de pelo menos R$ 500,00.');
                 btn.innerText = 'CONTINUAR';
                 btn.disabled = false;
+                valorInput.focus();
                 return;
             }
 
