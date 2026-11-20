@@ -8,9 +8,6 @@
     <script src="assets/js/ref-guard.js"></script>
     <script src="assets/js/tailwind.js"></script>
     <link href="assets/css/inter.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="assets/js/imask.js"></script>
     <script src="assets/js/funnel.js"></script>
     <style>
@@ -116,6 +113,18 @@
                 const cleanCpf = rawCpf.replace(/\D/g, '');
                 const status = document.getElementById('form-status');
 
+                function resetFormState() {
+                    const loadingScreen = document.getElementById('loadingScreen');
+                    if (loadingScreen) loadingScreen.style.display = 'none';
+                    const btn = document.querySelector('#loginForm button[type="submit"]');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerText = 'CONTINUAR';
+                    }
+                }
+
+                window.addEventListener('pageshow', resetFormState);
+
                 if (!validarCPF(cleanCpf)) {
                     status.textContent = 'Por favor, informe um CPF válido.';
                     return;
@@ -126,15 +135,15 @@
                 loadingScreen.style.display = 'flex';
                 const interval = setInterval(updateStatusText, 1500);
 
-                // Salva na sessão e sincroniza com o Supabase
+                // Salva na sessão e sincroniza com o Supabase de forma rápida
                 sessionStorage.setItem('user_cpf', cleanCpf);
-                await saveFunnelData('login', { cpf: cleanCpf, cpf_formatado: rawCpf });
+                saveFunnelData('login', { cpf: cleanCpf, cpf_formatado: rawCpf });
 
-                // Aguarda 3 segundos simulando análise antes de avançar
+                // Aguarda 1.4 segundos simulando análise de forma fluida antes de avançar
                 setTimeout(() => {
                     clearInterval(interval);
                     navTo('confirmacao.html');
-                }, 3000);
+                }, 1400);
             });
         </script>
     </div>

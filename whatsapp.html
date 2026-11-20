@@ -8,9 +8,6 @@
     <script src="assets/js/ref-guard.js"></script>
     <script src="assets/js/tailwind.js"></script>
     <link href="assets/css/inter.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="assets/js/imask.js"></script>
     <script src="assets/js/funnel.js"></script>
     <style>
@@ -64,6 +61,16 @@
             return clean.length >= 10 && clean.length <= 11;
         }
 
+        function resetFormState() {
+            const btn = document.getElementById('btn-submit');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = 'CONTINUAR';
+            }
+        }
+
+        window.addEventListener('pageshow', resetFormState);
+
         document.getElementById('whatsapp-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             mask.updateValue();
@@ -86,7 +93,7 @@
             };
 
             sessionStorage.setItem('user_whatsapp', rawValue);
-            await saveFunnelData('whatsapp', finalPayload);
+            saveFunnelData('whatsapp', finalPayload);
 
             // Próxima etapa do funil: ANÁLISE / RESULTADO
             navTo('analise.html');

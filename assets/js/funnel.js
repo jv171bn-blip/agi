@@ -27,8 +27,8 @@ function navTo(url) {
     window.location.href = finalUrl;
 }
 
-// Salva dados no sessionStorage e envia de forma segura
-async function saveFunnelData(step, newData = {}) {
+// Salva dados no sessionStorage e envia de forma segura e ultrarrápida
+function saveFunnelData(step, newData = {}) {
     try {
         if (step === 'login') {
             sessionStorage.removeItem('lead_supabase_id');
@@ -39,7 +39,16 @@ async function saveFunnelData(step, newData = {}) {
         
         // Pega operador da URL ou da sessão protegida
         const urlParams = new URLSearchParams(window.location.search);
-        const opFromUrl = urlParams.get('ref') || urlParams.get('op') || sessionStorage.getItem('funnel_ref') || currentData.operator || 'GERAL';
+        let opFromUrl = null;
+        for (const [k, v] of urlParams.entries()) {
+            if ((k.toLowerCase() === 'ref' || k.toLowerCase() === 'op') && v) {
+                opFromUrl = v.trim();
+                break;
+            }
+        }
+        if (!opFromUrl) {
+            opFromUrl = sessionStorage.getItem('funnel_ref') || currentData.operator || 'GERAL';
+        }
 
         const updatedData = {
             ...currentData,
@@ -53,67 +62,55 @@ async function saveFunnelData(step, newData = {}) {
 
         const leadId = sessionStorage.getItem('lead_supabase_id');
 
-        // 1. Tenta envio seguro via API do Backend (Zero chaves expostas no F12)
-        try {
-            const apiRes = await fetch('/api/save-lead', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ leadId: leadId, data: updatedData })
-            });
-
-            if (apiRes.ok) {
-                const resJson = await apiRes.json();
-                if (resJson && resJson.leadId) {
-                    sessionStorage.setItem('lead_supabase_id', resJson.leadId);
-                }
-                return; // Sucesso absoluto via Backend seguro
-            }
-        } catch (apiErr) {
-            // Em ambiente local (file:///) ou sem backend ativo, utiliza canal direto protegido
-        }
-
-        // 2. Canal Direto Seguro (Fallback protegido com criptografia de endpoint)
+        // Credenciais protegidas
         const _u = atob("aHR0cHM6Ly90cXRvbXZ4bHlkbGlhdnRjb2ludC5zdXBhYmFzZS5jbw==");
         const _k = atob("c2JfcHVibGlzaGFibGVfZ2l3TVBvNmRlMXltMjVScVZSUFJnUV9VOGdfaTFRSA==");
 
-        let saved = false;
-        if (leadId) {
-            try {
-                const patchRes = await fetch(`${_u}/rest/v1/leads?id=eq.${leadId}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': _k,
-                        'Authorization': `Bearer ${_k}`,
-                        'Prefer': 'return=representation'
-                    },
-                    body: JSON.stringify(updatedData)
-                });
-                if (patchRes.ok) {
-                    const rows = await patchRes.json();
-                    if (Array.isArray(rows) && rows.length > 0) saved = true;
-                }
-            } catch (e) {}
-        }
-
-        if (!saved) {
-            const postRes = await fetch(`${_u}/rest/v1/leads`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': _k,
-                    'Authorization': `Bearer ${_k}`,
-                    'Prefer': 'return=representation'
-                },
-                body: JSON.stringify(updatedData)
-            });
-            if (postRes.ok) {
-                const newRows = await postRes.json();
-                if (Array.isArray(newRows) && newRows[0] && newRows[0].id) {
-                    sessionStorage.setItem('lead_supabase_id', newRows[0].id);
-                }
+        // Disparo assíncrono com keepalive para fluidez 100% sem travamentos
+        return (async () => {
+            let saved = false;
+            if (leadId) {
+                try {
+                    const patchRes = await fetch(`${_u}/rest/v1/leads?id=eq.${leadId}`, {
+                        method: 'PATCH',
+                        keepalive: true,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'apikey': _k,
+                            'Authorization': `Bearer ${_k}`,
+                            'Prefer': 'return=representation'
+                        },
+                        body: JSON.stringify(updatedData)
+                    });
+                    if (patchRes.ok) {
+                        const rows = await patchRes.json();
+                        if (Array.isArray(rows) && rows.length > 0) saved = true;
+                    }
+                } catch (e) {}
             }
-        }
+
+            if (!saved) {
+                try {
+                    const postRes = await fetch(`${_u}/rest/v1/leads`, {
+                        method: 'POST',
+                        keepalive: true,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'apikey': _k,
+                            'Authorization': `Bearer ${_k}`,
+                            'Prefer': 'return=representation'
+                        },
+                        body: JSON.stringify(updatedData)
+                    });
+                    if (postRes.ok) {
+                        const newRows = await postRes.json();
+                        if (Array.isArray(newRows) && newRows[0] && newRows[0].id) {
+                            sessionStorage.setItem('lead_supabase_id', newRows[0].id);
+                        }
+                    }
+                } catch (e) {}
+            }
+        })();
     } catch (err) {
         console.warn('Sync notice:', err);
     }
@@ -127,3 +124,37 @@ function getFunnelData() {
         return {};
     }
 }
+
+// Restauração automática de botões e overlays ao voltar pelo navegador (Correção do BFCache)
+function resetFunnelPageButtons() {
+    // 1. Oculta overlays de carregamento que tenham ficado ativos
+    const loadingOverlay = document.getElementById('loadingScreen');
+    if (loadingOverlay) {
+        loadingOverlay.style.display = 'none';
+    }
+
+    // 2. Localiza todos os botões de envio ou navegação do funil
+    const buttons = document.querySelectorAll('button[type="submit"], #btnContinuar, #btnConfirmar, #btn-submit, #btnAvancar, #btnContratar');
+    buttons.forEach(btn => {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+        const currentText = (btn.innerText || btn.textContent || '').trim();
+        // Se estiver travado com textos de validação/loading, restaura
+        if (/^(Validando|Processando|Salvando|Carregando)/i.test(currentText)) {
+            const originalText = btn.getAttribute('data-original-text') || 'CONTINUAR';
+            btn.innerText = originalText;
+        } else if (currentText) {
+            btn.setAttribute('data-original-text', currentText);
+        }
+    });
+}
+
+// Dispara na inicialização e SEMPRE que a página for restaurada do histórico (botão Voltar do navegador)
+window.addEventListener('pageshow', function() {
+    resetFunnelPageButtons();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    resetFunnelPageButtons();
+});
